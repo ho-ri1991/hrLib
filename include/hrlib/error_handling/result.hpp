@@ -8,7 +8,17 @@
 #include <hrlib/type_traits/type_traits.hpp>
 
 namespace hrlib::error_handling {
+    //forward decralation
+    template <typename WrapType, typename ErrType>
+    class Result;
+
     namespace result {
+        //meta function for checking if the type is a Result<T, E> class
+        template <typename T>
+        using is_result_type = type_traits::is_match_template<Result, T>;
+        template <typename T>
+        constexpr bool is_result_type_v = is_result_type<T>::value;
+
         //a type which represents normal state in the Result class
         template <typename T>
         struct Ok {
@@ -81,7 +91,7 @@ namespace hrlib::error_handling {
         };
     } 
 
-    template <typename WrapType, typename ErrType = std::string, typename MergePolicy = result::DefaultMergePolicy>
+    template <typename WrapType, typename ErrType = std::string>
     class Result {
     public:
         using ok_wrap_type = WrapType;
@@ -119,6 +129,51 @@ namespace hrlib::error_handling {
             -> std::enable_if<std::is_invocable_r_v<ok_wrap_type, Fn>, ok_wrap_type> {
             return (*this) ? std::move(get_ok()) : fn();
         }
+        template <typename Fn, typename WrapType_ = std::decay_t<std::invoke_result_t<Fn, const ok_wrap_type&>>>
+        Result<WrapType_, ErrType> map(Fn fn) const& noexcept(std::is_nothrow_invocable_r_v<WrapType_, Fn, const ok_wrap_type&> 
+                                                              && std::is_nothrow_constructible_v<Result<WrapType_, ErrType>, result::Ok<WrapType_>&&>
+                                                              && std::is_nothrow_constructible_v<Result<WrapType_, ErrType>, const result::Err<ErrType>&>){
+            using ok_type = result::Ok<WrapType_>;
+            using result_type = Result<WrapType_, ErrType>;
+            return (*this) ? result_type(ok_type(fn(std::get<Ok>(var).data))) : result_type(std::get<Err>(var));
+        }
+        template <typename Fn, typename WrapType_ = std::decay_t<std::invoke_result_t<Fn, ok_wrap_type&&>>>
+        Result<WrapType_, ErrType> map(Fn fn) && noexcept(std::is_nothrow_invocable_r_v<WrapType_, Fn, ok_wrap_type&&> 
+                                                          && std::is_nothrow_constructible_v<Result<WrapType_, ErrType>, result::Ok<WrapType_>&&>
+                                                          && std::is_nothrow_constructible_v<Result<WrapType_, ErrType>, result::Err<ErrType>&&>){
+            using ok_type = result::Ok<WrapType_>;
+            using result_type = Result<WrapType_, ErrType>;
+            return (*this) ? result_type(ok_type(fn(std::move(std::get<Ok>(var).data)))) : result_type(std::get<Err>(std::move(var)));
+        }                     
+        template <
+                  typename Fn, 
+                  typename Result_ = std::enable_if_t<
+                          result::is_result_type_v<std::decay_t<std::invoke_result_t<Fn, const ok_wrap_type&>>>,
+                          std::decay_t<std::invoke_result_t<Fn, const ok_wrap_type&>>
+                      >,
+                  typename = std::enable_if_t<std::is_same_v<typename Result_::error_wrap_type, error_wrap_type>>
+                 >
+        Result_ flat_map(Fn fn) const& noexcept(std::is_nothrow_invocable_r_v<Result_, Fn, const ok_wrap_type&>
+                                                && std::is_nothrow_constructible_v<Result_, const Err&>) {
+            return (*this) ? fn(std::get<Ok>(var).data) : std::get<Err>(var);
+        }
+        template <
+                  typename Fn, 
+                  typename Result_ = std::enable_if_t<
+                          result::is_result_type_v<std::decay_t<std::invoke_result_t<Fn, ok_wrap_type&&>>>,
+                          std::decay_t<std::invoke_result_t<Fn, ok_wrap_type&&>>
+                      >,
+                  typename = std::enable_if_t<std::is_same_v<typename Result_::error_wrap_type, error_wrap_type>>
+                 >
+        Result_ flat_map(Fn fn) && noexcept(std::is_nothrow_invocable_r_v<Result_, Fn, ok_wrap_type&&>
+                                            && std::is_nothrow_constructible_v<Result_, Err&&>) {
+            return (*this) ? fn(std::move(std::get<Ok>(var).data)) : std::get<Err>(std::move(var));
+        }
+    public:
+        template <typename Matcher>
+        decltype(auto) match(Matcher&& matcher) const& { return std::visit(std::forward<Matcher>(matcher), var); }
+        template <typename Matcher>
+        decltype(auto) match(Matcher&& matcher) && { return std::visit(std::forward<Matcher>(matcher), std::move(var)); }
     };
 }
 
