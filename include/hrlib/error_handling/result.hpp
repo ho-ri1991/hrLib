@@ -135,86 +135,45 @@ namespace hrlib::error_handling {
     };
 
     namespace result {
-        //a type for merging errors in Result, this type is used when we use DefaultMergePolicy
+        //a type for merging Result class, this type is used when we use DefaultMergePolicy
         template <typename... Ts>
-        struct ErrorTuple {
-            std::tuple<Ts...> errors;
-            constexpr ErrorTuple(const std::tuple<Ts...>& tuple) noexcept(std::is_nothrow_copy_constructible_v<std::tuple<Ts...>>): errors(tuple){}
-            constexpr ErrorTuple(std::tuple<Ts...>&& tuple) noexcept(std::is_nothrow_move_constructible_v<std::tuple<Ts...>>): errors(std::move(tuple)){}
-            ErrorTuple() = default;
-        };
-
-        //deducation guides for ErrorTuple
-        template <typename... Ts>
-        ErrorTuple(const std::tuple<Ts...>&)->ErrorTuple<Ts...>;
-        template <typename... Ts>
-        ErrorTuple(std::tuple<Ts...>&&)->ErrorTuple<Ts...>;
-
-        //meta function which returns is the type is an ErrorTuple
-        template <typename T>
-        using is_error_tuple = type_traits::is_match_template<ErrorTuple, T>;
-        template <typename T>
-        constexpr bool is_error_tuple_v = is_error_tuple<T>::value;
-
-        template <typename... ErrorTuples>
-        constexpr auto errorTupleCat(ErrorTuples&&... errorTuples) 
-            -> std::enable_if_t<(is_error_tuple_v<std::decay_t<ErrorTuples>> && ...), decltype(ErrorTuple(std::tuple_cat(std::declval<ErrorTuples>().errors...)))> {
-            return std::tuple_cat(std::forward<ErrorTuples>(errorTuples).errors...);
-        }
-
-        //a type for merging ok in Result, this type is used when we use DefaultMergePolicy
-        template <typename... Ts>
-        struct OkTuple {
-            std::tuple<Ts...> oks;
-            constexpr OkTuple(const std::tuple<Ts...>& tuple) noexcept(std::is_nothrow_copy_constructible_v<std::tuple<Ts...>>): oks(tuple){}
-            constexpr OkTuple(std::tuple<Ts...>&& tuple) noexcept(std::is_nothrow_move_constructible_v<std::tuple<Ts...>>): oks(std::move(tuple)){}
-            OkTuple() = default;
+        struct MergeResult {
+            std::tuple<Ts...> tuple;
+            constexpr MergeResult(const std::tuple<Ts...>& tuple) noexcept(std::is_nothrow_copy_constructible_v<std::tuple<Ts...>>): tuple(tuple){}
+            constexpr MergeResult(std::tuple<Ts...>&& tuple) noexcept(std::is_nothrow_move_constructible_v<std::tuple<Ts...>>): tuple(std::move(tuple)){}
+            MergeResult() = default;
         };
         //deducation guide
         template <typename... Ts>
-        OkTuple(const std::tuple<Ts...>&)->OkTuple<Ts...>;
+        MergeResult(const std::tuple<Ts...>&)->MergeResult<Ts...>;
         template <typename... Ts>
-        OkTuple(std::tuple<Ts...>&&)->OkTuple<Ts...>;
+        MergeResult(std::tuple<Ts...>&&)->MergeResult<Ts...>;
+        //meta function which checks if the type is MergeResult<Ts...> class
+        template <typename T>
+        using is_merge_result = type_traits::is_match_template<MergeResult, T>;
+        template <typename T>
+        constexpr bool is_merge_result_v = is_merge_result<T>::value;
 
-        template <typename T>
-        using is_ok_tuple = type_traits::is_match_template<OkTuple, T>;
-        template <typename T>
-        constexpr bool is_ok_tuple_v = is_ok_tuple<T>::value;
-        
-        template <typename... OkTuples>
-        constexpr auto okTupleCat(OkTuples&&... okTuples)
-            -> std::enable_if_t<(is_ok_tuple_v<OkTuples> && ...), decltype(OkTuple(std::tuple_cat(std::declval<OkTuples>().oks...)))> {
-            return std::tuple_cat(std::forward<OkTuples>(okTuples).oks...);
+        template <typename... MergeResults>
+        constexpr auto mergeResultCat(MergeResults&&... mergeResults)
+            -> std::enable_if_t<(is_merge_result_v<std::decay_t<MergeResults>> && ...), decltype(MergeResult(std::tuple_cat(std::declval<MergeResults>().tuple...)))> {
+            return std::tuple_cat(std::forward<MergeResults>(mergeResults).tuple...);
         }
 
         struct DefaultMergePolicy {
         private:
-            template <typename Ok1, typename Ok2>
-            static constexpr auto merge_ok(Ok1&& ok1, Ok2&& ok2) {
-                using wrap_type1 = typename std::decay_t<Ok1>::wrap_type;
-                using wrap_type2 = typename std::decay_t<Ok2>::wrap_type;
-                if constexpr (is_ok_tuple_v<wrap_type1> && is_ok_tuple_v<wrap_type2>) {
-                    return Ok(okTupleCat(std::forward<Ok1>(ok1).data, std::forward<Ok2>(ok2).data));
-                } else if constexpr (is_ok_tuple_v<wrap_type1> && !is_ok_tuple_v<wrap_type2>) {
-                    return Ok(okTupleCat(std::forward<Ok1>(ok1).data, OkTuple(std::tuple(std::forward<Ok2>(ok2).data))));
-                } else if constexpr (!is_ok_tuple_v<wrap_type1> && is_ok_tuple_v<wrap_type2>) {
-                    return Ok(okTupleCat(OkTuple(std::tuple(std::forward<Ok1>(ok1).data)), std::forward<Ok2>(ok2).data));
+            template <typename WrapType1, typename WrapType2>
+            static constexpr auto merge_helper(WrapType1&& wrap1, WrapType2&& wrap2) {
+                using wrap_type1 = std::decay_t<WrapType1>;
+                using wrap_type2 = std::decay_t<WrapType2>;
+                if constexpr (is_merge_result_v<wrap_type1> && is_merge_result_v<wrap_type2>) {
+                    return mergeResultCat(std::forward<WrapType1>(wrap1), std::forward<WrapType2>(wrap2));
+                } else if constexpr (is_merge_result_v<wrap_type1> && !is_merge_result_v<wrap_type2>) {
+                    return mergeResultCat(std::forward<WrapType1>(wrap1), MergeResult(std::tuple(std::forward<WrapType2>(wrap2))));
+                } else if constexpr (!is_merge_result_v<wrap_type1> && is_merge_result_v<wrap_type2>) {
+                    return mergeResultCat(MergeResult(std::tuple(std::forward<WrapType1>(wrap1))), std::forward<WrapType2>(wrap2));
                 } else {
-                    return Ok(OkTuple(std::tuple(std::forward<Ok1>(ok1).data, std::forward<Ok2>(ok2).data)));
-                }
-            }
-            template <typename Err1, typename Err2>
-            static constexpr auto merge_err(Err1&& err1, Err2&& err2) {
-                using wrap_type1 = typename std::decay_t<Err1>::wrap_type;
-                using wrap_type2 = typename std::decay_t<Err2>::wrap_type;
-                if constexpr (is_error_tuple_v<wrap_type1> && is_error_tuple_v<wrap_type2>) {
-                    return Err(errorTupleCat(std::forward<Err1>(err1).err, std::forward<Err2>(err2).err));
-                } else if constexpr (is_error_tuple_v<wrap_type1> && !is_error_tuple_v<wrap_type2>) {
-                    return Err(errorTupleCat(std::forward<Err1>(err1).err, ErrorTuple(std::tuple(std::forward<Err2>(err2).err))));
-                } else if constexpr (!is_error_tuple_v<wrap_type1> && is_error_tuple_v<wrap_type2>) {
-                    return Err(errorTupleCat(ErrorTuple(std::tuple(std::forward<Err1>(err1).err)), std::forward<Err2>(err2).err));
-                } else {
-                    return Err(ErrorTuple(std::tuple(std::forward<Err1>(err1).err, std::forward<Err2>(err2).err)));
+                    return MergeResult(std::tuple(std::forward<WrapType1>(wrap1), std::forward<WrapType2>(wrap2)));
                 }
             }
         public:
@@ -226,19 +185,19 @@ namespace hrlib::error_handling {
 
             template <typename Result1, typename Result2, typename = std::enable_if_t<is_result_type_v<std::decay_t<Result1>> && is_result_type_v<std::decay_t<Result2>>>>
             static constexpr auto merge(Result1&& result1, Result2&& result2) {
-                using ok1 = typename std::decay_t<Result1>::Ok;
-                using err1 = typename std::decay_t<Result1>::Err;
-                using ok2 = typename std::decay_t<Result2>::Ok;
-                using err2 = typename std::decay_t<Result2>::Err;
-                using result_type = Result<typename decltype(merge_ok(std::declval<ok1>(), std::declval<ok2>()))::wrap_type, typename decltype(merge_err(std::declval<err1>(), std::declval<err2>()))::wrap_type>;
+                using ok_wrap_type1 = typename std::decay_t<Result1>::ok_wrap_type;
+                using err_wrap_type1 = typename std::decay_t<Result1>::error_wrap_type;
+                using ok_wrap_type2 = typename std::decay_t<Result2>::ok_wrap_type;
+                using err_wrap_type2 = typename std::decay_t<Result2>::error_wrap_type;
+                using result_type = Result<decltype(merge_helper(std::declval<ok_wrap_type1>(), std::declval<ok_wrap_type2>())), decltype(merge_helper(std::declval<err_wrap_type1>(), std::declval<err_wrap_type2>()))>;
                 if(result1 && result2) {
-                    return result_type(merge_ok(Ok(std::forward<Result1>(result1).get_ok()), Ok(std::forward<Result2>(result2).get_ok())));
+                    return result_type(Ok(merge_helper(std::forward<Result1>(result1).get_ok(), std::forward<Result2>(result2).get_ok())));
                 } else if(result1 && !result2) {
-                    return result_type(merge_err(Err(DefaultErrorValue<typename err1::wrap_type>::value), Err(std::forward<Result2>(result2).get_err())));
+                    return result_type(Err(merge_helper(DefaultErrorValue<err_wrap_type1>::value, std::forward<Result2>(result2).get_err())));
                 } else if(!result1 && result2) {
-                    return result_type(merge_err(Err(std::forward<Result1>(result1).get_err()), Err(DefaultErrorValue<typename err2::wrap_type>::value)));
+                    return result_type(Err(merge_helper(std::forward<Result1>(result1).get_err(), DefaultErrorValue<err_wrap_type2>::value)));
                 } else {
-                    return result_type(merge_err(Err(std::forward<Result1>(result1).get_err()), Err(std::forward<Result2>(result2).get_err())));
+                    return result_type(Err(merge_helper(std::forward<Result1>(result1).get_err(), std::forward<Result2>(result2).get_err())));
                 }
             }
         };

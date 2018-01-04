@@ -62,17 +62,17 @@ BOOST_AUTO_TEST_SUITE(result_test)
         auto result2 = Result<int, bool>(result::Ok(1));
         auto result3 = Result<std::string>(result::Ok(std::string("ccc")));
         auto mergeResult = result::sequence(result1, result2, result3);
-        BOOST_CHECK_EQUAL(std::get<0>(mergeResult.get_ok().oks), std::string("aaa"));
-        BOOST_CHECK_EQUAL(std::get<1>(mergeResult.get_ok().oks), 1);
-        BOOST_CHECK_EQUAL(std::get<2>(mergeResult.get_ok().oks), std::string("ccc"));
+        BOOST_CHECK_EQUAL(std::get<0>(mergeResult.get_ok().tuple), std::string("aaa"));
+        BOOST_CHECK_EQUAL(std::get<1>(mergeResult.get_ok().tuple), 1);
+        BOOST_CHECK_EQUAL(std::get<2>(mergeResult.get_ok().tuple), std::string("ccc"));
         BOOST_CHECK_EQUAL(result1.get_ok(), std::string("aaa"));
         BOOST_CHECK_EQUAL(result2.get_ok(), 1);
         BOOST_CHECK_EQUAL(result3.get_ok(), std::string("ccc"));
         auto result4 = Result<std::string>(result::Err(std::string("err")));
         auto mergeResult1 = result::sequence(result1, result2, result4);
-        BOOST_CHECK_EQUAL(std::get<0>(mergeResult1.get_err().errors), 0);
-        BOOST_CHECK_EQUAL(std::get<1>(mergeResult1.get_err().errors), false);
-        BOOST_CHECK_EQUAL(std::get<2>(mergeResult1.get_err().errors), std::string("err"));
+        BOOST_CHECK_EQUAL(std::get<0>(mergeResult1.get_err().tuple), 0);
+        BOOST_CHECK_EQUAL(std::get<1>(mergeResult1.get_err().tuple), false);
+        BOOST_CHECK_EQUAL(std::get<2>(mergeResult1.get_err().tuple), std::string("err"));
     }
 BOOST_AUTO_TEST_SUITE_END()
 
