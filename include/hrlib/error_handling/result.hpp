@@ -229,8 +229,8 @@ namespace hrlib::error_handling {
         template <typename MergePolicy = DefaultMergePolicy, typename... Ts, typename... Errs>
         auto sequence(std::tuple<Result<Ts, Errs>...>&& results) { return detail::SequenceHelper<MergePolicy, std::tuple<Result<Ts, Errs>...>&&, std::tuple<Ts...>, std::tuple<Errs...>>::sequence(std::move(results)); }
 
-        template <typename ErrorMergePolicy = DefaultMergePolicy, typename... Results>
-        auto sequence(Results... results) { return sequence(std::tuple(std::forward<Results>(results)...)); }
+        template <typename MergePolicy = DefaultMergePolicy, typename... Results, typename = std::enable_if_t<(is_result_type_v<std::decay_t<Results>> && ...)>>
+        auto sequence(Results... results) { return sequence<MergePolicy>(std::tuple(std::forward<Results>(results)...)); }
     }
 }
 
