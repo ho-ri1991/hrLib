@@ -5,6 +5,8 @@
 #include <tuple>
 #include <functional>
 #include <variant>
+#include <optional>
+#include <boost/optional.hpp>
 #include <hrlib/type_traits/type_traits.hpp>
 
 namespace hrlib::error_handling {
@@ -231,6 +233,66 @@ namespace hrlib::error_handling {
 
         template <typename MergePolicy = DefaultMergePolicy, typename... Results, typename = std::enable_if_t<(is_result_type_v<std::decay_t<Results>> && ...)>>
         auto sequence(Results... results) { return sequence<MergePolicy>(std::tuple(std::forward<Results>(results)...)); }
+
+        template <typename WrapType, typename ErrType>
+        Result<WrapType, ErrType> fromOptional(const std::optional<WrapType>& option, ErrType err) {
+            using result_type = Result<WrapType, ErrType>;
+            return option ? result_type(Ok<WrapType>(*option)) : result_type(Err(std::forward<ErrType>(err)));
+        }
+
+        template <typename WrapType, typename ErrType>
+        Result<WrapType, ErrType> fromOptional(std::optional<WrapType>&& option, ErrType err) {
+            using result_type = Result<WrapType, ErrType>;
+            return option ? result_type(Ok<WrapType>(std::move(*option))) : result_type(Err(std::forward<ErrType>(err)));
+        }
+
+        template <typename WrapType, typename ErrType>
+        auto fromOptional(const boost::optional<WrapType>& option, ErrType err) {
+            if constexpr (std::is_reference_v<WrapType>) {
+                using ok_wrap_type = std::reference_wrapper<std::remove_reference_t<WrapType>>;
+                using result_type = Result<ok_wrap_type, ErrType>;
+                return option ? result_type(Ok(ok_wrap_type(*option))) : result_type(Err(std::forward<ErrType>(err)));
+            } else {
+                using result_type = Result<WrapType, ErrType>;
+                return option ? result_type(Ok(*option)) : result_type(Err(std::forward<ErrType>(err)));
+            }
+        }
+
+        template <typename WrapType, typename ErrType>
+        auto fromOptional(boost::optional<WrapType>&& option, ErrType err) {
+            if constexpr (std::is_reference_v<WrapType>) {
+                using ok_wrap_type = std::reference_wrapper<std::remove_reference_t<WrapType>>;
+                using result_type = Result<ok_wrap_type, ErrType>;
+                return option ? result_type(Ok(ok_wrap_type(std::move(*option)))) : result_type(Err(std::forward<ErrType>(err)));
+            } else {
+                using result_type = Result<WrapType, ErrType>;
+                return option ? result_type(Ok(std::move(*option))) : result_type(Err(std::forward<ErrType>(err)));
+            }
+        }
+
+       template <typename Fn, typename ErrType, typename WrapType = std::decay_t<std::invoke_result_t<Fn>>>
+        Result<WrapType, ErrType> try_fn(Fn fn, ErrType err) {
+            using result_type = Result<WrapType, ErrType>;
+            try {
+                return result_type(Ok<WrapType>(fn()));
+            } catch(...) {
+                return result_type(Err<ErrType>(std::forward<ErrType>(err)));
+            }
+        }
+
+        template <
+                  typename Fn, typename ErrFn, typename Exception, 
+                  typename WrapType = std::decay_t<std::invoke_result_t<Fn>>, 
+                  typename ErrType = std::decay_t<std::invoke_result_t<ErrFn, Exception&>>
+        >
+        Result<WrapType, ErrType> try_fn(Fn fn, ErrFn errFn, Exception) {
+            using result_type = Result<WrapType, ErrType>;
+            try {
+                return result_type(Ok<WrapType>(fn()));
+            } catch(Exception& ex) {
+                return result_type(Err<ErrType>(errFn(ex)));
+            }
+        }
     }
 }
 
