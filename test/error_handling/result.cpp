@@ -74,5 +74,18 @@ BOOST_AUTO_TEST_SUITE(result_test)
         BOOST_CHECK_EQUAL(std::get<1>(mergeResult1.get_err().tuple), false);
         BOOST_CHECK_EQUAL(std::get<2>(mergeResult1.get_err().tuple), std::string("err"));
     }
+    BOOST_AUTO_TEST_CASE(result_from_optional) {
+        std::optional<int> op1 = 1;
+        auto result1 = result::fromOptional(op1, std::string("err"));
+        BOOST_CHECK(result1);
+        BOOST_CHECK_EQUAL(result1.get_ok(), 1);
+        std::optional<int> op2;
+        auto result2 = result::fromOptional(op2, std::string("err"));
+        BOOST_CHECK(!result2);
+        BOOST_CHECK_EQUAL(result2.get_err(), std::string("err"));
+        auto result3 = result::fromOptional(std::optional<std::string>("str"), std::string("err"));
+        BOOST_CHECK(result3);
+        BOOST_CHECK_EQUAL(result3.get_ok(), std::string("str"));
+    }
 BOOST_AUTO_TEST_SUITE_END()
 
