@@ -4,6 +4,7 @@
 #include <hrlib/error_handling/result.hpp>
 #include <string>
 #include <boost/type_index.hpp>
+#include <exception>
 #include <boost/test/unit_test.hpp>
 
 using namespace hrlib;
@@ -86,6 +87,28 @@ BOOST_AUTO_TEST_SUITE(result_test)
         auto result3 = result::fromOptional(std::optional<std::string>("str"), std::string("err"));
         BOOST_CHECK(result3);
         BOOST_CHECK_EQUAL(result3.get_ok(), std::string("str"));
+    }
+    BOOST_AUTO_TEST_CASE(result_try_fn) {
+        auto result1 = result::try_fn([](){ return 1; }, std::string("err"));
+        BOOST_CHECK(result1);
+        BOOST_CHECK_EQUAL(result1.get_ok(), 1);
+
+        auto result2 = result::try_fn([](){ throw std::runtime_error("uuuuu"); return 0;}, std::string("err"));
+        BOOST_CHECK(!result2);
+        BOOST_CHECK_EQUAL(result2.get_err(), std::string("err"));
+
+        auto result3 = result::try_fn([](){ return 1; }, [](std::runtime_error& e){ return std::string("err"); }, std::runtime_error(""));
+        BOOST_CHECK(result3);
+        BOOST_CHECK_EQUAL(result3.get_ok(), 1);
+
+        auto result4 = result::try_fn([](){ throw std::runtime_error("err"); return 0;}, [](std::runtime_error& e){ return std::string(e.what());}, std::runtime_error(""));
+        BOOST_CHECK(!result4);
+        BOOST_CHECK_EQUAL(result4.get_err(), std::string("err"));
+
+        BOOST_CHECK_EXCEPTION(result::try_fn([](){throw std::runtime_error(""); return 0;}, [](std::invalid_argument& e){return std::string(e.what());}, std::invalid_argument("")),
+                              std::runtime_error,
+                              [](const std::runtime_error&){return true;});
+
     }
 BOOST_AUTO_TEST_SUITE_END()
 
