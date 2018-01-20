@@ -6,18 +6,18 @@
 
 namespace hrlib::integer_sequence_util {
     template <typename, typename>
-    struct integer_sequence_cat;
+    struct concat;
 
     template <typename T, T... I1, T... I2>
-    struct integer_sequence_cat<std::integer_sequence<T, I1...>, std::integer_sequence<T, I2...>>  {
+    struct concat<std::integer_sequence<T, I1...>, std::integer_sequence<T, I2...>>  {
         using type = std::integer_sequence<T, I1..., I2...>;
     };
 
     template <typename IntegerSeq1, typename IntegerSeq2>
-    using integer_sequence_cat_t = typename integer_sequence_cat<IntegerSeq1, IntegerSeq2>::type;
+    using concat_t = typename concat<IntegerSeq1, IntegerSeq2>::type;
 
     template <typename T, T... I1, T... I2>
-    constexpr std::integer_sequence<T, I1..., I2...> integer_sequence_cat_fn(std::integer_sequence<T, I1...>, std::integer_sequence<T, I2...>) noexcept {
+    constexpr std::integer_sequence<T, I1..., I2...> concat_fn(std::integer_sequence<T, I1...>, std::integer_sequence<T, I2...>) noexcept {
         return std::integer_sequence<T, I1..., I2...>{};
     }
 
@@ -33,6 +33,35 @@ namespace hrlib::integer_sequence_util {
     template <typename T, T... I, typename Fn>
     constexpr auto transform_fn(std::integer_sequence<T, I...>, Fn fn) noexcept(std::is_nothrow_invocable_r_v<T, Fn, T>) {
         return std::integer_sequence<T, fn(I)...>{};
+    }
+
+    template <typename>
+    struct reverse;
+
+    template <typename T, T I, T... J>
+    struct reverse<std::integer_sequence<T, I, J...>> {
+        using type = 
+            concat_t<
+                typename reverse<std::integer_sequence<T, J...>>::type, 
+                std::integer_sequence<T, I>
+            >;
+    };
+
+    template <typename T, T I>
+    struct reverse<std::integer_sequence<T, I>> {
+        using type = std::integer_sequence<T, I>;
+    };
+
+    template <typename Seq>
+    using reverse_t = typename reverse<Seq>::type;
+
+    template <typename T, T I, T ...J>
+    constexpr auto reverse_fn(std::integer_sequence<T, I, J...>) noexcept {
+        if constexpr (sizeof...(J) == 0) {
+            return std::integer_sequence<T, I>{};
+        } else {
+            return concat_t<reverse_t<std::integer_sequence<T, J...>>, std::integer_sequence<T, I>>{};
+        }
     }
 }
 

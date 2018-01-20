@@ -12,12 +12,12 @@ struct meta_add_1 {
 int main(){
     static_assert(
         std::is_same_v<
-            integer_sequence_cat_t<std::integer_sequence<int, -1, 5, 3>, std::integer_sequence<int, 1, 6, 2>>, 
+            concat_t<std::integer_sequence<int, -1, 5, 3>, std::integer_sequence<int, 1, 6, 2>>, 
             std::integer_sequence<int, -1, 5, 3,  1, 6, 2>
         >
     );
 
-    constexpr auto seq = integer_sequence_cat_fn(std::integer_sequence<int, -1, 5, 3>{}, std::integer_sequence<int, 1, 6, 2>{});
+    constexpr auto seq = concat_fn(std::integer_sequence<int, -1, 5, 3>{}, std::integer_sequence<int, 1, 6, 2>{});
     static_assert(
         std::is_same_v<
             std::remove_const_t<decltype(seq)>, 
@@ -37,6 +37,20 @@ int main(){
             std::is_same_v<
                 std::remove_const_t<decltype(transform_fn(std::integer_sequence<int, 0, 1, -1>{}, fn))>,
                 std::integer_sequence<int, 0, 2, -2>
+            >
+    );
+
+    static_assert(
+            std::is_same_v<
+                reverse<std::integer_sequence<int, 1, 0, -2, 0, 3, 1>>::type,
+                std::integer_sequence<int, 1, 3, 0, -2, 0, 1>
+            >
+    );
+
+    static_assert(
+            std::is_same_v<
+                std::remove_const_t<decltype(reverse_fn(std::integer_sequence<int, 1, 0, -2, 0, 3, 1>{}))>,
+                std::integer_sequence<int, 1, 3, 0, -2, 0, 1>
             >
     );
     return 0;
