@@ -10,6 +10,14 @@ struct meta_add_1 {
 };
 
 int main(){
+    static_assert(head_v<std::integer_sequence<int, 1, 2, 3>> == 1);
+    static_assert(head_v<std::integer_sequence<int, 1>> == 1);
+    head<std::integer_sequence<int>> h; //just instantiatable
+
+    static_assert(tail_v<std::integer_sequence<int, 1, 2, 3>> == 3);
+    static_assert(tail_v<std::integer_sequence<int, 1>> == 1);
+    tail<std::integer_sequence<int>> t; //just instantiatable
+
     static_assert(
         std::is_same_v<
             concat_t<std::integer_sequence<int, -1, 5, 3>, std::integer_sequence<int, 1, 6, 2>>, 

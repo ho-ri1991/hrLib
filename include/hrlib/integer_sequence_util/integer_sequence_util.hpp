@@ -5,6 +5,39 @@
 #include <type_traits>
 
 namespace hrlib::integer_sequence_util {
+    template <typename>
+    struct head;
+
+    template <typename T, T I, T... J>
+    struct head<std::integer_sequence<T, I, J...>> {
+        static constexpr T value = I;
+    };
+
+    template <typename T>
+    struct head<std::integer_sequence<T>>{};
+
+    template <typename Seq>
+    static constexpr auto head_v = head<Seq>::value;
+
+    template <typename>
+    struct tail;
+
+    template <typename T, T I, T... J>
+    struct tail<std::integer_sequence<T, I, J...>> {
+        static constexpr T value = tail<std::integer_sequence<T, J...>>::value;
+    };
+
+    template <typename T, T I>
+    struct tail<std::integer_sequence<T, I>> {
+        static constexpr T value = I;
+    };
+
+    template <typename T>
+    struct tail<std::integer_sequence<T>>{};
+
+    template <typename Seq>
+    static constexpr auto tail_v = tail<Seq>::value;
+
     template <typename, typename>
     struct concat;
 
@@ -63,6 +96,7 @@ namespace hrlib::integer_sequence_util {
             return concat_t<reverse_t<std::integer_sequence<T, J...>>, std::integer_sequence<T, I>>{};
         }
     }
+
 }
 
 #endif
