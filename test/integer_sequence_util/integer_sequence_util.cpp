@@ -19,13 +19,27 @@ int main(){
     tail<std::integer_sequence<int>> t; //just instantiatable
 
     static_assert(
+            std::is_same_v<
+                push_back_t<std::integer_sequence<int, 1, 2, 3>, 4>,
+                std::integer_sequence<int, 1, 2, 3, 4>
+            >
+    );
+
+    static_assert(
+            std::is_same_v<
+                push_front_t<std::integer_sequence<int, 1, 2, 3>, 4>,
+                std::integer_sequence<int, 4, 1, 2, 3>
+            >
+    );
+ 
+    static_assert(
         std::is_same_v<
             concat_t<std::integer_sequence<int, -1, 5, 3>, std::integer_sequence<int, 1, 6, 2>>, 
             std::integer_sequence<int, -1, 5, 3,  1, 6, 2>
         >
     );
 
-    constexpr auto seq = concat_fn(std::integer_sequence<int, -1, 5, 3>{}, std::integer_sequence<int, 1, 6, 2>{});
+   constexpr auto seq = concat_fn(std::integer_sequence<int, -1, 5, 3>{}, std::integer_sequence<int, 1, 6, 2>{});
     static_assert(
         std::is_same_v<
             std::remove_const_t<decltype(seq)>, 

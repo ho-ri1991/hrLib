@@ -38,6 +38,28 @@ namespace hrlib::integer_sequence_util {
     template <typename Seq>
     static constexpr auto tail_v = tail<Seq>::value;
 
+    template <typename Seq, auto I> 
+    struct push_back;
+
+    template <typename T, T... I, T J>
+    struct push_back<std::integer_sequence<T, I...>, J> {
+        using type = std::integer_sequence<T, I..., J>;
+    };
+
+    template <typename Seq, auto I>
+    using push_back_t = typename push_back<Seq, I>::type;
+
+    template <typename, auto>
+    struct push_front;
+
+    template <typename T, T... I, T J>
+    struct push_front<std::integer_sequence<T, I...>, J> {
+        using type = std::integer_sequence<T, J, I...>;
+    };
+
+    template <typename Seq, auto I>
+    using push_front_t = typename push_front<Seq, I>::type;
+
     template <typename, typename>
     struct concat;
 
