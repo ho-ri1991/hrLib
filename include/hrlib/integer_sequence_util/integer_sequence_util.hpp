@@ -20,23 +20,42 @@ namespace hrlib::integer_sequence_util {
     static constexpr auto head_v = head<Seq>::value;
 
     template <typename>
-    struct tail;
+    struct last;
 
     template <typename T, T I, T... J>
-    struct tail<std::integer_sequence<T, I, J...>> {
-        static constexpr T value = tail<std::integer_sequence<T, J...>>::value;
+    struct last<std::integer_sequence<T, I, J...>> {
+        static constexpr T value = last<std::integer_sequence<T, J...>>::value;
     };
 
     template <typename T, T I>
-    struct tail<std::integer_sequence<T, I>> {
+    struct last<std::integer_sequence<T, I>> {
         static constexpr T value = I;
     };
 
     template <typename T>
-    struct tail<std::integer_sequence<T>>{};
+    struct last<std::integer_sequence<T>>{};
 
     template <typename Seq>
-    static constexpr auto tail_v = tail<Seq>::value;
+    static constexpr auto last_v = last<Seq>::value;
+
+    template <typename>
+    struct tail;
+
+    template <typename T, T I, T... J>
+    struct tail<std::integer_sequence<T, I, J...>> {
+        using type = std::integer_sequence<T, J...>;
+    };
+
+    template <typename T, T I>
+    struct tail<std::integer_sequence<T, I>> {
+        using type = std::integer_sequence<T>;
+    };
+
+    template <typename T>
+    struct tail<std::integer_sequence<T>> {};
+
+    template <typename Seq>
+    using tail_t = typename tail<Seq>::type;
 
     template <typename Seq, auto I> 
     struct push_back;

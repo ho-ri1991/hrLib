@@ -14,9 +14,22 @@ int main(){
     static_assert(head_v<std::integer_sequence<int, 1>> == 1);
     head<std::integer_sequence<int>> h; //just instantiatable
 
-    static_assert(tail_v<std::integer_sequence<int, 1, 2, 3>> == 3);
-    static_assert(tail_v<std::integer_sequence<int, 1>> == 1);
-    tail<std::integer_sequence<int>> t; //just instantiatable
+    static_assert(last_v<std::integer_sequence<int, 1, 2, 3>> == 3);
+    static_assert(last_v<std::integer_sequence<int, 1>> == 1);
+    last<std::integer_sequence<int>> t; //just instantiatable
+
+    static_assert(
+            std::is_same_v<
+                tail_t<std::integer_sequence<int, 1, 2, 3, 4>>,
+                std::integer_sequence<int, 2, 3, 4>
+            >
+    );
+    static_assert(
+            std::is_same_v<
+                tail_t<std::integer_sequence<int, 1>>,
+                std::integer_sequence<int>
+            >
+    );
 
     static_assert(
             std::is_same_v<
