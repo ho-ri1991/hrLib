@@ -9,6 +9,11 @@ struct meta_add_1 {
     static constexpr int value = I + 1;
 };
 
+template <auto X, auto Y>
+struct Less {
+    static constexpr auto value = X < Y;
+};
+
 int main(){
     static_assert(head_v<std::integer_sequence<int, 1, 2, 3>> == 1);
     static_assert(head_v<std::integer_sequence<int, 1>> == 1);
@@ -88,6 +93,14 @@ int main(){
                 std::integer_sequence<int, 1, 3, 0, -2, 0, 1>
             >
     );
+
+// sort meta function is currently not available due to the bug in gcc 7.2.0. We can use this if we use clang
+//    static_assert(
+//            std::is_same_v<
+//                sort_t<std::integer_sequence<int, 2, 1, 3, 2>>, std::integer_sequence<int, 1, 2, 2, 3>
+//            >
+//    );
+
     return 0;
 }
 

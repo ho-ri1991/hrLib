@@ -3,6 +3,7 @@
 
 #include <utility>
 #include <type_traits>
+#include <hrlib/type_traits/type_traits.hpp>
 
 namespace hrlib::integer_sequence_util {
     template <typename>
@@ -138,6 +139,57 @@ namespace hrlib::integer_sequence_util {
         }
     }
 
+// Because of the bug in gcc 7.2.0, the internal compiler error occurs. So we cannot use this. But we can use these sort meta functions if we use clang
+//    namespace detail {
+//        template <typename Seq, auto I, template <auto, auto> class Cmp>
+//        struct insert;
+//
+//        template <typename T, T... J, T I, template <T, T> class Cmp>
+//        struct insert<std::integer_sequence<T, J...>, I, Cmp> {
+//        private:
+//            using target = std::integer_sequence<T, J...>;
+//            static constexpr T target_head = head_v<target>;
+//            // the reason to use identity is in order not to instantiate false branch recursively.
+//            using new_tail = 
+//                typename std::conditional_t<
+//                    Cmp<I, target_head>::value,
+//                    type_traits::identity<target>,
+//                    insert<tail_t<target>, I, Cmp>
+//                >::type;
+//            static constexpr T new_head = Cmp<I, target_head>::value ? I : target_head;
+//        public:
+//            using type = push_front_t<new_tail, new_head>;
+//        };
+//
+//        template <typename T, T I, template <T, T> class Cmp>
+//        struct insert<std::integer_sequence<T>, I, Cmp> {
+//            using type = std::integer_sequence<T, I>;
+//        };
+//    }
+//
+//    template <auto X, auto Y>
+//    struct less_meta {
+//        static constexpr auto value = X < Y;
+//    };
+//
+//    template <typename, template <auto, auto> class = less_meta>
+//    struct sort;
+//
+//    template <typename T, T I, T... J, template <T, T> class Compare>
+//    struct sort<std::integer_sequence<T, I, J...>, Compare> {
+//    private:
+//        using sorted_tail = typename sort<std::integer_sequence<T, J...>, Compare>::type;
+//    public:
+//        using type = typename detail::insert<sorted_tail, I, Compare>::type;
+//    };
+//
+//    template <typename T, T I, template <T, T> class Compare>
+//    struct sort<std::integer_sequence<T, I>, Compare> {
+//        using type = std::integer_sequence<T, I>;
+//    };
+//
+//    template <typename Seq, template <auto, auto> class Compare = less_meta>
+//    using sort_t = typename sort<Seq, Compare>::type;
 }
 
 #endif
