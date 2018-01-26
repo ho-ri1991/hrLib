@@ -65,6 +65,11 @@ int main(){
         >
     );
 
+    static_assert(get_v<std::integer_sequence<int, 2, 1, 3, 5>, 0> == 2);
+    static_assert(get_v<std::integer_sequence<int, 2, 1, 3, 5>, 2> == 3);
+    static_assert(get_v<std::integer_sequence<int, 2, 1, 3, 5>, 3> == 5);
+    get<std::integer_sequence<int, 1, 2, 3>, 3> get_value; //just instantiatable
+
     static_assert(
             std::is_same_v<
                 transform<std::integer_sequence<int, 1, -1>, meta_add_1>::type, 

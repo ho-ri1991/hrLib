@@ -96,6 +96,23 @@ namespace hrlib::integer_sequence_util {
         return std::integer_sequence<T, I1..., I2...>{};
     }
 
+    template <typename, std::size_t>
+    struct get;
+
+    template <typename T, T I, T...  J, std::size_t N>
+    struct get<std::integer_sequence<T, I, J...>, N>: get<std::integer_sequence<T, J...>, N - 1>{};
+
+    template <typename T, T I, T... J>
+    struct get<std::integer_sequence<T, I, J...>, 0> {
+        static constexpr T value = I;
+    };
+
+    template <typename T, std::size_t N>
+    struct get<std::integer_sequence<T>, N>{};
+    
+    template <typename Seq, std::size_t I>
+    static constexpr auto get_v = get<Seq, I>::value;
+
     template <typename sequence, template <auto> class Fn>
 //  template <typename sequence, template <typename sequence::value_type> class Fn> // C++14
     struct transform;
@@ -195,6 +212,7 @@ namespace hrlib::integer_sequence_util {
 //
 //    template <typename Seq, template <auto, auto> class Compare = less_meta>
 //    using sort_t = typename sort<Seq, Compare>::type;
+    
 }
 
 #endif
