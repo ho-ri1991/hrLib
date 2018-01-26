@@ -58,7 +58,7 @@ namespace hrlib::integer_sequence_util {
     template <typename Seq>
     using tail_t = typename tail<Seq>::type;
 
-    template <typename Seq, auto I> 
+    template <typename Seq, auto I>
     struct push_back;
 
     template <typename T, T... I, T J>
@@ -122,9 +122,9 @@ namespace hrlib::integer_sequence_util {
             >;
     };
 
-    template <typename T, T I>
-    struct reverse<std::integer_sequence<T, I>> {
-        using type = std::integer_sequence<T, I>;
+    template <typename T>
+    struct reverse<std::integer_sequence<T>> {
+        using type = std::integer_sequence<T>;
     };
 
     template <typename Seq>
@@ -139,6 +139,11 @@ namespace hrlib::integer_sequence_util {
         }
     }
 
+    template <typename T>
+    constexpr auto reverse_fn(std::integer_sequence<T>) noexcept {
+        return std::integer_sequence<T>{};
+    }
+
 // Because of the bug in gcc 7.2.0, the internal compiler error occurs. So we cannot use this. But we can use these sort meta functions if we use clang
 //    namespace detail {
 //        template <typename Seq, auto I, template <auto, auto> class Cmp>
@@ -150,7 +155,7 @@ namespace hrlib::integer_sequence_util {
 //            using target = std::integer_sequence<T, J...>;
 //            static constexpr T target_head = head_v<target>;
 //            // the reason to use identity is in order not to instantiate false branch recursively.
-//            using new_tail = 
+//            using new_tail =
 //                typename std::conditional_t<
 //                    Cmp<I, target_head>::value,
 //                    type_traits::identity<target>,
