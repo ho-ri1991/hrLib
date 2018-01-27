@@ -6,6 +6,11 @@ namespace hrlib::type_traits {
     struct identity {
         using type = T;
     };
+
+    template <auto X>
+    struct identity_value {
+        static constexpr auto value = X;
+    };
 }
 
 #endif

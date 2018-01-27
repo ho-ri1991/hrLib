@@ -58,6 +58,17 @@ namespace hrlib::integer_sequence_util {
     template <typename Seq>
     using tail_t = typename tail<Seq>::type;
 
+    template <typename Seq>
+    struct size;
+
+    template <typename T, T... I>
+    struct size<std::integer_sequence<T, I...>> {
+        static constexpr auto value = sizeof...(I);
+    };
+
+    template <typename Seq>
+    static constexpr auto size_v = size<Seq>::value;
+
     template <typename Seq, auto I>
     struct push_back;
 
@@ -112,6 +123,72 @@ namespace hrlib::integer_sequence_util {
     
     template <typename Seq, std::size_t I>
     static constexpr auto get_v = get<Seq, I>::value;
+
+    namespace detail {
+        template <typename Seq, auto I, std::size_t N>
+        struct find_impl;
+
+        template <typename T, T I, T... J, T K, std::size_t N>
+        struct find_impl<std::integer_sequence<T, I, J...>, K, N>:
+            std::conditional_t<
+                I == K, 
+                type_traits::identity_value<N>,
+                find_impl<std::integer_sequence<T, J...>, K, N + 1>
+            > {};
+        
+        template <typename T, T K, std::size_t N>
+        struct find_impl<std::integer_sequence<T>, K, N> {
+            static constexpr std::size_t value = N;
+        };
+
+        template <typename Seq, template <auto> class Fn, std::size_t N>
+        struct find_if_impl;
+
+        template <typename T, T I, T... J, template <T> class Fn, std::size_t N>
+        struct find_if_impl<std::integer_sequence<T, I, J...>, Fn, N>:
+            std::conditional_t<
+                Fn<I>::value,
+                type_traits::identity_value<N>,
+                find_if_impl<std::integer_sequence<T, J...>, Fn, N + 1>
+            >{};
+        
+        template <typename T, template <T> class Fn, std::size_t N>
+        struct find_if_impl<std::integer_sequence<T>, Fn, N>: type_traits::identity_value<N>{};
+
+        template <typename T, T... I, typename Fn>
+        constexpr auto find_if_fn_impl(std::integer_sequence<T, I...>, Fn fn , std::size_t n) noexcept(std::is_nothrow_invocable_r_v<bool, Fn, T>){
+            if constexpr (sizeof...(I) == 0) {
+                return n;
+            } else {
+                using target = std::integer_sequence<T, I...>;
+                if(fn(head_v<target>)) return n;
+                else return find_if_fn_impl(tail_t<target>{}, fn, n + 1);
+            }
+        }
+    }
+
+    template <typename Seq, auto I>
+    struct find;
+
+    template <typename T, T... I, T J>
+    struct find<std::integer_sequence<T, I...>, J>: detail::find_impl<std::integer_sequence<T, I...>, J, 0>{};
+
+    template <typename Seq, auto I>
+    static constexpr std::size_t find_v = find<Seq, I>::value;
+
+    template <typename Seq, template <auto> class Fn>
+    struct find_if;
+
+    template <typename T, T... I, template <auto> class Fn>
+    struct find_if<std::integer_sequence<T, I...>, Fn>: detail::find_if_impl<std::integer_sequence<T, I...>, Fn, 0>{};
+
+    template <typename Seq, template <auto> class  Fn>
+    static constexpr std::size_t find_if_v = find_if<Seq, Fn>::value;
+
+    template <typename T, T... I, typename Fn>
+    constexpr std::size_t find_if_fn(std::integer_sequence<T, I...> seq, Fn fn) noexcept(std::is_nothrow_invocable_r_v<bool, Fn, T>) {
+       return detail::find_if_fn_impl(seq, fn, 0);
+    }
 
     template <typename sequence, template <auto> class Fn>
 //  template <typename sequence, template <typename sequence::value_type> class Fn> // C++14
@@ -213,6 +290,27 @@ namespace hrlib::integer_sequence_util {
 //    template <typename Seq, template <auto, auto> class Compare = less_meta>
 //    using sort_t = typename sort<Seq, Compare>::type;
     
+//    namespace detail {
+//        template <typename T, T I, T... J, typename Fn>
+//        constexpr auto sort_fn_impl(std::integer_sequence<T, I, J...> seq, Fn fn) noexcept{
+//            if constexpr (sizeof...(J) == 0){
+//                return std::integer_sequence<T, I>{};
+//            } else {
+//                auto new_tail = sort_fn_impl(std::integer_sequence<T, J...>{}, fn);
+//
+//            }
+//        }
+//
+//        template <typename T, Fn>
+//        constexpr auto sort_fn_impl(std::integer_sequence<T>, Fn fn) noexcept{
+//            return std::integer_sequence<T>{};
+//        }
+//    }
+//
+//    template <typename T, T I, T... J, typename Fn>
+//    constexpr auto sort_fn(std::integer_sequence<T, I, J...> seq, Fn fn) noexcept{
+//        return detail::sort_fn_impl(seq, fn);
+//    }
 }
 
 #endif
