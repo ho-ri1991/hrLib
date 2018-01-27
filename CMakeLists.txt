@@ -19,5 +19,5 @@ set_target_properties(
         PROPERTIES
         IMPORTED_LOCATION ${Boost_LIBRARY_DIRS}/libboost_unit_test_framework.a
 )
-add_subdirectory(test)
+add_subdirectory(test/hrlib)
 

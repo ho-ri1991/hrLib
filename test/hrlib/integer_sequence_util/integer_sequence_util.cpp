@@ -14,6 +14,11 @@ struct Less {
     static constexpr auto value = X < Y;
 };
 
+template <int I>
+struct is_even {
+    static constexpr bool value = I % 2 == 0;
+};
+
 int main(){
     static_assert(head_v<std::integer_sequence<int, 1, 2, 3>> == 1);
     static_assert(head_v<std::integer_sequence<int, 1>> == 1);
@@ -35,6 +40,9 @@ int main(){
                 std::integer_sequence<int>
             >
     );
+
+    static_assert(size_v<std::integer_sequence<int, 1, 2, 3>> == 3);
+    static_assert(size_v<std::integer_sequence<int>> == 0);
 
     static_assert(
             std::is_same_v<
@@ -69,6 +77,25 @@ int main(){
     static_assert(get_v<std::integer_sequence<int, 2, 1, 3, 5>, 2> == 3);
     static_assert(get_v<std::integer_sequence<int, 2, 1, 3, 5>, 3> == 5);
     get<std::integer_sequence<int, 1, 2, 3>, 3> get_value; //just instantiatable
+
+    static_assert(find_v<std::integer_sequence<int, 1, 3, 4, 5>, 1> == 0);
+    static_assert(find_v<std::integer_sequence<int, 1, 3, 4, 5>, 3> == 1);
+    static_assert(find_v<std::integer_sequence<int, 1, 3, 4, 5>, 4> == 2);
+    static_assert(find_v<std::integer_sequence<int, 1, 3, 4, 5>, 5> == 3);
+    static_assert(find_v<std::integer_sequence<int, 1, 3, 4, 5>, 2> == 4);
+
+    static_assert(find_if_v<std::integer_sequence<int, 2, 3, 4, 5>, is_even> == 0);
+    static_assert(find_if_v<std::integer_sequence<int, 1, 2, 3, 4>, is_even> == 1);
+    static_assert(find_if_v<std::integer_sequence<int, 1, 3, 4, 4>, is_even> == 2);
+    static_assert(find_if_v<std::integer_sequence<int, 1, 1, 3, 4>, is_even> == 3);
+    static_assert(find_if_v<std::integer_sequence<int, 1, -1, 3, 5>, is_even> == 4);
+
+    constexpr auto is_odd = [](int x)noexcept->bool{return x % 2;};
+    static_assert(find_if_fn(std::integer_sequence<int, 1, 2, 3, 4>{}, is_odd) == 0);
+    static_assert(find_if_fn(std::integer_sequence<int, 2, 1, 3, 4>{}, is_odd) == 1);
+    static_assert(find_if_fn(std::integer_sequence<int, 2, 2, 3, 4>{}, is_odd) == 2);
+    static_assert(find_if_fn(std::integer_sequence<int, 2, 2, 4, 3>{}, is_odd) == 3);
+    static_assert(find_if_fn(std::integer_sequence<int, 2, 2, 4, 4>{}, is_odd) == 4);
 
     static_assert(
             std::is_same_v<
