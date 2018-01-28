@@ -26,7 +26,7 @@ int main(){
 
     static_assert(last_v<std::integer_sequence<int, 1, 2, 3>> == 3);
     static_assert(last_v<std::integer_sequence<int, 1>> == 1);
-    last<std::integer_sequence<int>> t; //just instantiatable
+    last<std::integer_sequence<int>> l; //just instantiatable
 
     static_assert(
             std::is_same_v<
@@ -40,6 +40,7 @@ int main(){
                 std::integer_sequence<int>
             >
     );
+    tail<std::integer_sequence<int>> t; //just instantiatable
 
     static_assert(size_v<std::integer_sequence<int, 1, 2, 3>> == 3);
     static_assert(size_v<std::integer_sequence<int>> == 0);
@@ -125,6 +126,9 @@ int main(){
                 std::integer_sequence<int, 1, 3, 0, -2, 0, 1>
             >
     );
+
+    static_assert(std::is_same_v<range_t<int, -1, 2>, std::integer_sequence<int, -1, 0, 1>>);
+    static_assert(std::is_same_v<range_t<int, 0, 0>, std::integer_sequence<int>>);
 
 // sort meta function is currently not available due to the bug in gcc 7.2.0. We can use this if we use clang
 //    static_assert(

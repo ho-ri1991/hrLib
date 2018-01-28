@@ -6,6 +6,7 @@
 #include <hrlib/type_traits/type_traits.hpp>
 
 namespace hrlib::integer_sequence_util {
+    // head meta-function
     template <typename>
     struct head;
 
@@ -15,30 +16,12 @@ namespace hrlib::integer_sequence_util {
     };
 
     template <typename T>
-    struct head<std::integer_sequence<T>>{};
+    struct head<std::integer_sequence<T>>{}; // for SFINAE friendly
 
     template <typename Seq>
     static constexpr auto head_v = head<Seq>::value;
 
-    template <typename>
-    struct last;
-
-    template <typename T, T I, T... J>
-    struct last<std::integer_sequence<T, I, J...>> {
-        static constexpr T value = last<std::integer_sequence<T, J...>>::value;
-    };
-
-    template <typename T, T I>
-    struct last<std::integer_sequence<T, I>> {
-        static constexpr T value = I;
-    };
-
-    template <typename T>
-    struct last<std::integer_sequence<T>>{};
-
-    template <typename Seq>
-    static constexpr auto last_v = last<Seq>::value;
-
+    // tail meta-function
     template <typename>
     struct tail;
 
@@ -47,17 +30,13 @@ namespace hrlib::integer_sequence_util {
         using type = std::integer_sequence<T, J...>;
     };
 
-    template <typename T, T I>
-    struct tail<std::integer_sequence<T, I>> {
-        using type = std::integer_sequence<T>;
-    };
-
     template <typename T>
-    struct tail<std::integer_sequence<T>> {};
+    struct tail<std::integer_sequence<T>> {}; // for SFINAE friendly
 
     template <typename Seq>
     using tail_t = typename tail<Seq>::type;
 
+    // size meta-function
     template <typename Seq>
     struct size;
 
@@ -69,6 +48,7 @@ namespace hrlib::integer_sequence_util {
     template <typename Seq>
     static constexpr auto size_v = size<Seq>::value;
 
+    // push_bach meta-function
     template <typename Seq, auto I>
     struct push_back;
 
@@ -80,6 +60,7 @@ namespace hrlib::integer_sequence_util {
     template <typename Seq, auto I>
     using push_back_t = typename push_back<Seq, I>::type;
 
+    // push_front meta-function
     template <typename, auto>
     struct push_front;
 
@@ -91,6 +72,7 @@ namespace hrlib::integer_sequence_util {
     template <typename Seq, auto I>
     using push_front_t = typename push_front<Seq, I>::type;
 
+    // concat meta-function
     template <typename, typename>
     struct concat;
 
@@ -107,6 +89,57 @@ namespace hrlib::integer_sequence_util {
         return std::integer_sequence<T, I1..., I2...>{};
     }
 
+    // reverse meta-function
+    template <typename>
+    struct reverse;
+
+    template <typename T, T I, T... J>
+    struct reverse<std::integer_sequence<T, I, J...>> {
+        using type = 
+            concat_t<
+                typename reverse<std::integer_sequence<T, J...>>::type, 
+                std::integer_sequence<T, I>
+            >;
+    };
+
+    template <typename T>
+    struct reverse<std::integer_sequence<T>> {
+        using type = std::integer_sequence<T>;
+    };
+
+    template <typename Seq>
+    using reverse_t = typename reverse<Seq>::type;
+
+    template <typename T, T I, T ...J>
+    constexpr auto reverse_fn(std::integer_sequence<T, I, J...>) noexcept {
+        if constexpr (sizeof...(J) == 0) {
+            return std::integer_sequence<T, I>{};
+        } else {
+            return concat_t<reverse_t<std::integer_sequence<T, J...>>, std::integer_sequence<T, I>>{};
+        }
+    }
+
+    template <typename T>
+    constexpr auto reverse_fn(std::integer_sequence<T>) noexcept {
+        return std::integer_sequence<T>{};
+    }
+
+    // last meta-function
+    template <typename>
+    struct last;
+
+    template <typename T, T I, T... J>
+    struct last<std::integer_sequence<T, I, J...>> {
+        static constexpr T value = head_v<reverse_t<std::integer_sequence<T, I, J...>>>;
+    };
+
+    template <typename T>
+    struct last<std::integer_sequence<T>>{}; // for SFINAE friendly
+
+    template <typename Seq>
+    static constexpr auto last_v = last<Seq>::value;
+
+    // get meta-function
     template <typename, std::size_t>
     struct get;
 
@@ -124,6 +157,34 @@ namespace hrlib::integer_sequence_util {
     template <typename Seq, std::size_t I>
     static constexpr auto get_v = get<Seq, I>::value;
 
+    // transform meta-function
+    template <typename sequence, template <auto> class Fn>
+//  template <typename sequence, template <typename sequence::value_type> class Fn> // C++14
+    struct transform;
+
+    template <typename T, T... I, template <T> class Fn>
+    struct transform<std::integer_sequence<T, I...>, Fn>{
+        using type = std::integer_sequence<T, Fn<I>::value...>;
+    };
+
+    template <typename T, T... I, typename Fn>
+    constexpr auto transform_fn(std::integer_sequence<T, I...>, Fn fn) noexcept(std::is_nothrow_invocable_r_v<T, Fn, T>) {
+        return std::integer_sequence<T, fn(I)...>{};
+    }
+
+    template <typename T, T Begin, T End>
+    struct range {
+    private:
+        static_assert(Begin <= End);
+        static constexpr auto fn = [](T x){return x + Begin;};
+    public:
+        using type = std::remove_const_t<decltype(transform_fn(std::make_integer_sequence<T, End - Begin>{}, fn))>;
+    };
+
+    template <typename T, T Begin, T End>
+    using range_t = typename range<T, Begin, End>::type;
+
+    // find meta-function
     namespace detail {
         template <typename Seq, auto I, std::size_t N>
         struct find_impl;
@@ -188,54 +249,6 @@ namespace hrlib::integer_sequence_util {
     template <typename T, T... I, typename Fn>
     constexpr std::size_t find_if_fn(std::integer_sequence<T, I...> seq, Fn fn) noexcept(std::is_nothrow_invocable_r_v<bool, Fn, T>) {
        return detail::find_if_fn_impl(seq, fn, 0);
-    }
-
-    template <typename sequence, template <auto> class Fn>
-//  template <typename sequence, template <typename sequence::value_type> class Fn> // C++14
-    struct transform;
-
-    template <typename T, T... I, template <T> class Fn>
-    struct transform<std::integer_sequence<T, I...>, Fn>{
-        using type = std::integer_sequence<T, Fn<I>::value...>;
-    };
-
-    template <typename T, T... I, typename Fn>
-    constexpr auto transform_fn(std::integer_sequence<T, I...>, Fn fn) noexcept(std::is_nothrow_invocable_r_v<T, Fn, T>) {
-        return std::integer_sequence<T, fn(I)...>{};
-    }
-
-    template <typename>
-    struct reverse;
-
-    template <typename T, T I, T... J>
-    struct reverse<std::integer_sequence<T, I, J...>> {
-        using type = 
-            concat_t<
-                typename reverse<std::integer_sequence<T, J...>>::type, 
-                std::integer_sequence<T, I>
-            >;
-    };
-
-    template <typename T>
-    struct reverse<std::integer_sequence<T>> {
-        using type = std::integer_sequence<T>;
-    };
-
-    template <typename Seq>
-    using reverse_t = typename reverse<Seq>::type;
-
-    template <typename T, T I, T ...J>
-    constexpr auto reverse_fn(std::integer_sequence<T, I, J...>) noexcept {
-        if constexpr (sizeof...(J) == 0) {
-            return std::integer_sequence<T, I>{};
-        } else {
-            return concat_t<reverse_t<std::integer_sequence<T, J...>>, std::integer_sequence<T, I>>{};
-        }
-    }
-
-    template <typename T>
-    constexpr auto reverse_fn(std::integer_sequence<T>) noexcept {
-        return std::integer_sequence<T>{};
     }
 
 // Because of the bug in gcc 7.2.0, the internal compiler error occurs. So we cannot use this. But we can use these sort meta functions if we use clang
