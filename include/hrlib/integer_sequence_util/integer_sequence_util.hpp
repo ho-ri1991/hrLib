@@ -172,6 +172,7 @@ namespace hrlib::integer_sequence_util {
         return std::integer_sequence<T, fn(I)...>{};
     }
 
+    // range meta-function
     template <typename T, T Begin, T End>
     struct range {
     private:
@@ -183,6 +184,33 @@ namespace hrlib::integer_sequence_util {
 
     template <typename T, T Begin, T End>
     using range_t = typename range<T, Begin, End>::type;
+
+    // slice meta-function
+    namespace detail {
+        template <typename, typename>
+        struct slice_impl;
+
+        template <typename T, T... I, std::size_t... J>
+        struct slice_impl<std::integer_sequence<T, I...>, std::integer_sequence<std::size_t, J...>> {
+            using type = std::integer_sequence<T, get_v<std::integer_sequence<T, I...>, J>...>;
+        };
+
+        template <typename Seq, typename HelperSeq>
+        using slice_impl_t = typename slice_impl<Seq, HelperSeq>::type;
+    }
+
+    template <typename, std::size_t, std::size_t>
+    struct slice;
+
+    template <typename T, T... I, std::size_t Begin, std::size_t End>
+    struct slice<std::integer_sequence<T, I...>, Begin, End> {
+        static_assert(Begin <= End);
+        static_assert(Begin < sizeof...(I) && End <= sizeof...(I));
+        using type = detail::slice_impl_t<std::integer_sequence<T, I...>, range_t<std::size_t, Begin, End>>;
+    };
+
+    template <typename Seq, std::size_t Begin, std::size_t End>
+    using slice_t = typename slice<Seq, Begin, End>::type;
 
     // find meta-function
     namespace detail {
@@ -251,6 +279,43 @@ namespace hrlib::integer_sequence_util {
        return detail::find_if_fn_impl(seq, fn, 0);
     }
 
+    namespace detail {
+        template <typename T, T I, T... J, typename Fn>
+        constexpr auto insert(std::integer_sequence<T, J...>, Fn fn) noexcept{
+            if constexpr (sizeof...(J) == 0) {
+                return std::integer_sequence<T, I>{};
+            } else {
+                using target = std::integer_sequence<T, J...>;
+                if constexpr (fn(I, head_v<target>)) {
+                    return push_front_t<target, I>{};
+                } else {
+                    auto new_tail = insert<T, I>(tail_t<target>{}, fn);
+                    return push_front_t<std::remove_const_t<decltype(new_tail)>, head_v<target>>{};
+                }
+            }
+        }
+
+        template <typename T, T I, T... J, typename Fn>
+        constexpr auto sort_fn_impl(std::integer_sequence<T, I, J...> seq, Fn fn) noexcept{
+            if constexpr (sizeof...(J) == 0){
+                return std::integer_sequence<T, I>{};
+            } else {
+                auto new_tail = sort_fn_impl(std::integer_sequence<T, J...>{}, fn);
+                return insert<T, I>(new_tail, fn);
+            }
+        }
+
+        template <typename T, typename Fn>
+        constexpr auto sort_fn_impl(std::integer_sequence<T>, Fn fn) noexcept{
+            return std::integer_sequence<T>{};
+        }
+    }
+
+    template <typename T, T I, T... J, typename Fn>
+    constexpr auto sort_fn(std::integer_sequence<T, I, J...> seq, Fn fn) noexcept{
+        return detail::sort_fn_impl(seq, fn);
+    }
+
 // Because of the bug in gcc 7.2.0, the internal compiler error occurs. So we cannot use this. But we can use these sort meta functions if we use clang
 //    namespace detail {
 //        template <typename Seq, auto I, template <auto, auto> class Cmp>
@@ -302,28 +367,6 @@ namespace hrlib::integer_sequence_util {
 //
 //    template <typename Seq, template <auto, auto> class Compare = less_meta>
 //    using sort_t = typename sort<Seq, Compare>::type;
-    
-//    namespace detail {
-//        template <typename T, T I, T... J, typename Fn>
-//        constexpr auto sort_fn_impl(std::integer_sequence<T, I, J...> seq, Fn fn) noexcept{
-//            if constexpr (sizeof...(J) == 0){
-//                return std::integer_sequence<T, I>{};
-//            } else {
-//                auto new_tail = sort_fn_impl(std::integer_sequence<T, J...>{}, fn);
-//
-//            }
-//        }
-//
-//        template <typename T, Fn>
-//        constexpr auto sort_fn_impl(std::integer_sequence<T>, Fn fn) noexcept{
-//            return std::integer_sequence<T>{};
-//        }
-//    }
-//
-//    template <typename T, T I, T... J, typename Fn>
-//    constexpr auto sort_fn(std::integer_sequence<T, I, J...> seq, Fn fn) noexcept{
-//        return detail::sort_fn_impl(seq, fn);
-//    }
 }
 
 #endif

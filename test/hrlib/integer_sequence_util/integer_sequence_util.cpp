@@ -130,6 +130,11 @@ int main(){
     static_assert(std::is_same_v<range_t<int, -1, 2>, std::integer_sequence<int, -1, 0, 1>>);
     static_assert(std::is_same_v<range_t<int, 0, 0>, std::integer_sequence<int>>);
 
+    static_assert(std::is_same_v<slice_t<std::integer_sequence<int, 0, 1, 2, 3, 4>, 1, 5>, std::integer_sequence<int, 1, 2, 3, 4>>);
+    static_assert(std::is_same_v<slice_t<std::integer_sequence<int, 0, 1, 2, 3, 4>, 2, 3>, std::integer_sequence<int, 2>>);
+    static_assert(std::is_same_v<slice_t<std::integer_sequence<int, 0, 1, 2, 3, 4>, 1, 1>, std::integer_sequence<int>>);
+    static_assert(std::is_same_v<slice_t<std::integer_sequence<int, 0, 1, 2, 3, 4>, 0, 5>, std::integer_sequence<int, 0, 1, 2, 3, 4>>);
+
 // sort meta function is currently not available due to the bug in gcc 7.2.0. We can use this if we use clang
 //    static_assert(
 //            std::is_same_v<
@@ -137,6 +142,21 @@ int main(){
 //            >
 //    );
 
+    constexpr auto less = [](auto x, auto y)->bool{return x < y;};
+    constexpr auto greater = [](auto x, auto y)->bool{return x > y;};
+    static_assert(
+        std::is_same_v<
+            std::remove_const_t<decltype(sort_fn(std::integer_sequence<int, 3, 2, 1, 4, 1>{}, less))>,
+            std::integer_sequence<int, 1, 1, 2, 3, 4>
+        >
+    );
+
+    static_assert(
+        std::is_same_v<
+            std::remove_const_t<decltype(sort_fn(std::integer_sequence<int, 3, 2, 1, 4, 1>{}, greater))>,
+            std::integer_sequence<int, 4, 3, 2, 1, 1>
+        >
+    );
     return 0;
 }
 
