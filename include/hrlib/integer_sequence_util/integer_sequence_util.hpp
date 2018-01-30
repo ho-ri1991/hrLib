@@ -128,13 +128,8 @@ namespace hrlib::integer_sequence_util {
     template <typename>
     struct last;
 
-    template <typename T, T I, T... J>
-    struct last<std::integer_sequence<T, I, J...>> {
-        static constexpr T value = head_v<reverse_t<std::integer_sequence<T, I, J...>>>;
-    };
-
-    template <typename T>
-    struct last<std::integer_sequence<T>>{}; // for SFINAE friendly
+    template <typename T, T... I>
+    struct last<std::integer_sequence<T, I...>>: head<reverse_t<std::integer_sequence<T, I...>>> {};
 
     template <typename Seq>
     static constexpr auto last_v = last<Seq>::value;
