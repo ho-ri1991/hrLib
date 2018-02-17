@@ -54,6 +54,24 @@ namespace hrlib::type_traits {
     template <typename Tpl, typename T>
     using push_back_t = typename push_back<Tpl, T>::type;
 
+    template <typename, typename, std::size_t>
+    struct insert;
+    template <template <typename...> class Tpl, typename... Ts, typename T, std::size_t N>
+    struct insert<Tpl<Ts...>, T, N> {
+        static_assert(0 <= N);
+    private:
+        using new_head = std::conditional_t<N == 0, T, head_t<Tpl<Ts...>>>;
+        using new_tail = typename std::conditional_t<N == 0, identity<Tpl<Ts...>>, insert<tail_t<Tpl<Ts...>>, T, N - 1>>::type;
+    public:
+        using type = push_front_t<new_tail, new_head>;
+    };
+    template <template <typename...> class Tpl, typename T>
+    struct insert<Tpl<>, T, 0> {
+        using type = Tpl<T>;
+    };
+    template <typename Tpl, typename T, std::size_t N>
+    using insert_t = typename insert<Tpl, T, N>::type;
+
     template <typename, std::size_t>
     struct delete_nth;
     template <template <typename...> class Tpl, typename... Ts, std::size_t N>
@@ -75,6 +93,11 @@ namespace hrlib::type_traits {
     template <typename Tpl, std::size_t N>
     using delete_nth_t = typename delete_nth<Tpl, N>::type;
 
+    template <typename Tpl, std::size_t N>
+    struct get: std::conditional_t<N == 0, head<Tpl>, get<tail_t<Tpl>, N - 1>>{};
+    template <typename Tpl, std::size_t N>
+    using get_t = typename get<Tpl, N>::type;
+
     template <typename, typename, std::size_t N = 0>
     struct find;
     template <template <typename...> class Tpl, typename... Ts, typename T, std::size_t N>
@@ -84,6 +107,7 @@ namespace hrlib::type_traits {
     struct find<Tpl<>, T, N>: identity_value<N>{};
     template <typename Tpl, typename T>
     constexpr std::size_t find_v = find<Tpl, T>::value;
+
 }
 
 #endif //HRLIB_TYPE_TRAITS_TYPE_LIST_UTIL

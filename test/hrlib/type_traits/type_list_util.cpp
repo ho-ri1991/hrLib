@@ -25,10 +25,19 @@ int main(){
     static_assert(std::is_same_v<push_front_t<TypeList<>, int>, TypeList<int>>);
     static_assert(std::is_same_v<push_front_t<TypeList<int, bool>, int>, TypeList<int, int, bool>>);
 
+    static_assert(std::is_same_v<insert_t<TypeList<int, bool, double>, float, 0>, TypeList<float, int, bool, double>>);
+    static_assert(std::is_same_v<insert_t<TypeList<int, bool, double>, float, 1>, TypeList<int, float, bool, double>>);
+    static_assert(std::is_same_v<insert_t<TypeList<int, bool, double>, float, 2>, TypeList<int, bool, float, double>>);
+    static_assert(std::is_same_v<insert_t<TypeList<int, bool, double>, float, 3>, TypeList<int, bool, double, float>>);
+
     static_assert(std::is_same_v<delete_nth_t<TypeList<int, bool, double>, 0>, TypeList<bool, double>>);
     static_assert(std::is_same_v<delete_nth_t<TypeList<int, bool, double>, 1>, TypeList<int, double>>);
     static_assert(std::is_same_v<delete_nth_t<TypeList<int, bool, double>, 2>, TypeList<int, bool>>);
     static_assert(std::is_same_v<delete_nth_t<TypeList<int, bool, double>, 3>, TypeList<int, bool, double>>);
+
+    static_assert(std::is_same_v<get_t<TypeList<int, bool, double>, 0>, int>);
+    static_assert(std::is_same_v<get_t<TypeList<int, bool, double>, 1>, bool>);
+    static_assert(std::is_same_v<get_t<TypeList<int, bool, double>, 2>, double>);
 
     static_assert(find_v<TypeList<int, bool, int, double>, int> == 0);
     static_assert(find_v<TypeList<int, bool, int, double>, bool> == 1);
