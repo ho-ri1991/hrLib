@@ -54,14 +54,12 @@ namespace hrlib::type_traits {
     template <typename Tpl, typename T>
     using push_back_t = typename push_back<Tpl, T>::type;
 
-    template <typename, typename, std::size_t>
-    struct insert;
-    template <template <typename...> class Tpl, typename... Ts, typename T, std::size_t N>
-    struct insert<Tpl<Ts...>, T, N> {
+    template <typename Tpl, typename T, std::size_t N>
+    struct insert {
         static_assert(0 <= N);
     private:
-        using new_head = std::conditional_t<N == 0, T, head_t<Tpl<Ts...>>>;
-        using new_tail = typename std::conditional_t<N == 0, identity<Tpl<Ts...>>, insert<tail_t<Tpl<Ts...>>, T, N - 1>>::type;
+        using new_head = std::conditional_t<N == 0, T, head_t<Tpl>>;
+        using new_tail = typename std::conditional_t<N == 0, identity<Tpl>, insert<tail_t<Tpl>, T, N - 1>>::type;
     public:
         using type = push_front_t<new_tail, new_head>;
     };
@@ -98,11 +96,8 @@ namespace hrlib::type_traits {
     template <typename Tpl, std::size_t N>
     using get_t = typename get<Tpl, N>::type;
 
-    template <typename, typename, std::size_t N = 0>
-    struct find;
-    template <template <typename...> class Tpl, typename... Ts, typename T, std::size_t N>
-    struct find<Tpl<Ts...>, T, N>: 
-        std::conditional_t<std::is_same_v<head_t<Tpl<Ts...>>, T>, identity_value<N>, find<tail_t<Tpl<Ts...>>, T, N + 1>>{};
+    template <typename Tpl, typename T, std::size_t N = 0>
+    struct find: std::conditional_t<std::is_same_v<head_t<Tpl>, T>, identity_value<N>, find<tail_t<Tpl>, T, N + 1>>{};
     template <template <typename...> class Tpl, typename T, std::size_t N>
     struct find<Tpl<>, T, N>: identity_value<N>{};
     template <typename Tpl, typename T>
