@@ -27,6 +27,15 @@ namespace hrlib::type_traits {
     template <typename Tpl>
     using tail_t = typename tail<Tpl>::type;
 
+    template <typename>
+    struct size;
+    template <template <typename...> class Tpl, typename... Ts>
+    struct size<Tpl<Ts...>> {
+        static constexpr auto value = sizeof...(Ts);
+    };
+    template <typename Tpl>
+    constexpr auto size_v = size<Tpl>::value;
+
     template <typename, typename>
     struct concat;
     template <template <typename...> class Tpl, typename... Ts1, typename... Ts2>
@@ -103,6 +112,29 @@ namespace hrlib::type_traits {
     template <typename Tpl, typename T>
     constexpr std::size_t find_v = find<Tpl, T>::value;
 
+    namespace detail {
+        template <typename Tpl1, typename Tpl2, bool is_empty = size_v<Tpl1> == 0>
+        struct is_permutation_impl {
+        private:
+            static constexpr auto find_ans = find_v<Tpl2, head_t<Tpl1>>;
+        public:
+            using type = 
+                typename std::conditional_t<
+                    find_ans < size_v<Tpl2>, 
+                    is_permutation_impl<tail_t<Tpl1>, delete_nth_t<Tpl2, find_ans>>, 
+                    identity<std::false_type>
+                >::type;
+        };
+        template <typename Tpl1, typename Tpl2>
+        struct is_permutation_impl<Tpl1, Tpl2, true> {
+            using type = std::true_type;
+        };
+    }
+
+    template <typename Tpl1, typename Tpl2>
+    struct is_permutation: std::conditional_t<size_v<Tpl1> != size_v<Tpl2>, identity<std::false_type>, detail::is_permutation_impl<Tpl1, Tpl2>>::type{};
+    template <typename Tpl1, typename Tpl2>
+    constexpr bool is_permutation_v = is_permutation<Tpl1, Tpl2>::value;
 }
 
 #endif //HRLIB_TYPE_TRAITS_TYPE_LIST_UTIL

@@ -16,6 +16,9 @@ int main(){
     static_assert(std::is_same_v<tail_t<TypeList<int>>, TypeList<>>);
     tail<TypeList<>> t;
 
+    static_assert(size_v<TypeList<int, int, int>> == 3);
+    static_assert(size_v<TypeList<>> == 0);
+
     static_assert(std::is_same_v<concat_t<TypeList<int, bool, double>, TypeList<int, float>>, TypeList<int, bool, double, int, float>>);
     static_assert(std::is_same_v<concat_t<TypeList<>, TypeList<int, bool>>, TypeList<int, bool>>);
 
@@ -43,6 +46,10 @@ int main(){
     static_assert(find_v<TypeList<int, bool, int, double>, bool> == 1);
     static_assert(find_v<TypeList<int, bool, int, double>, double> == 3);
     static_assert(find_v<TypeList<int, bool, int, double>, float> == 4);
+
+    static_assert(is_permutation_v<TypeList<int, bool, double>, TypeList<bool, int, double>>);
+    static_assert(is_permutation_v<TypeList<int, bool, double, int>, TypeList<int, bool, int, double>>);
+    static_assert(!is_permutation_v<TypeList<int, int, double>, TypeList<bool, int, double>>);
 
     return 0;
 }
