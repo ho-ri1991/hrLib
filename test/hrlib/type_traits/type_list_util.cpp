@@ -19,6 +19,10 @@ int main(){
     static_assert(size_v<TypeList<int, int, int>> == 3);
     static_assert(size_v<TypeList<>> == 0);
 
+    static_assert(empty_v<TypeList<>>);
+    static_assert(!empty_v<TypeList<int>>);
+    static_assert(!empty_v<TypeList<int, bool, double>>);
+
     static_assert(std::is_same_v<concat_t<TypeList<int, bool, double>, TypeList<int, float>>, TypeList<int, bool, double, int, float>>);
     static_assert(std::is_same_v<concat_t<TypeList<>, TypeList<int, bool>>, TypeList<int, bool>>);
 
@@ -37,6 +41,10 @@ int main(){
     static_assert(std::is_same_v<delete_nth_t<TypeList<int, bool, double>, 1>, TypeList<int, double>>);
     static_assert(std::is_same_v<delete_nth_t<TypeList<int, bool, double>, 2>, TypeList<int, bool>>);
     static_assert(std::is_same_v<delete_nth_t<TypeList<int, bool, double>, 3>, TypeList<int, bool, double>>);
+
+    static_assert(std::is_same_v<reverse_t<TypeList<int, bool, double, float>>, TypeList<float, double, bool, int>>);
+    static_assert(std::is_same_v<reverse_t<TypeList<int>>, TypeList<int>>);
+    static_assert(std::is_same_v<reverse_t<TypeList<>>, TypeList<>>);
 
     static_assert(std::is_same_v<get_t<TypeList<int, bool, double>, 0>, int>);
     static_assert(std::is_same_v<get_t<TypeList<int, bool, double>, 1>, bool>);

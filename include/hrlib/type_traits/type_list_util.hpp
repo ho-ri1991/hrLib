@@ -36,6 +36,11 @@ namespace hrlib::type_traits {
     template <typename Tpl>
     constexpr auto size_v = size<Tpl>::value;
 
+    template <typename Tpl>
+    struct empty: std::conditional_t<size_v<Tpl> == 0, std::true_type, std::false_type>{};
+    template <typename Tpl>
+    constexpr bool empty_v = empty<Tpl>::value;
+
     template <typename, typename>
     struct concat;
     template <template <typename...> class Tpl, typename... Ts1, typename... Ts2>
@@ -99,6 +104,17 @@ namespace hrlib::type_traits {
     };
     template <typename Tpl, std::size_t N>
     using delete_nth_t = typename delete_nth<Tpl, N>::type;
+
+    template <typename Tpl, bool isEmpty = empty_v<Tpl>>
+    struct reverse {
+        using type = push_back_t<typename reverse<tail_t<Tpl>>::type, head_t<Tpl>>;
+    };
+    template <typename Tpl>
+    struct reverse<Tpl, true> {
+        using type = Tpl;
+    };
+    template <typename Tpl>
+    using reverse_t = typename reverse<Tpl>::type;
 
     template <typename Tpl, std::size_t N>
     struct get: std::conditional_t<N == 0, head<Tpl>, get<tail_t<Tpl>, N - 1>>{};
