@@ -116,6 +116,15 @@ namespace hrlib::type_traits {
     template <typename Tpl>
     using reverse_t = typename reverse<Tpl>::type;
 
+    template <typename Tpl, bool isEmpty = empty_v<Tpl>>
+    struct last {
+        using type = head_t<reverse_t<Tpl>>;
+    };
+    template <typename Tpl>
+    struct last<Tpl, true> {};
+    template <typename Tpl>
+    using last_t = typename last<Tpl>::type;
+
     template <typename Tpl, std::size_t N>
     struct get: std::conditional_t<N == 0, head<Tpl>, get<tail_t<Tpl>, N - 1>>{};
     template <typename Tpl, std::size_t N>
@@ -127,6 +136,13 @@ namespace hrlib::type_traits {
     struct find<Tpl<>, T, N>: identity_value<N>{};
     template <typename Tpl, typename T>
     constexpr std::size_t find_v = find<Tpl, T>::value;
+
+    template <typename Tpl, template <typename> class Predicate, std::size_t N = 0>
+    struct find_if: std::conditional_t<Predicate<head_t<Tpl>>::value, identity_value<N>, find_if<tail_t<Tpl>, Predicate, N + 1>>{};
+    template <template <typename...> class Tpl, template <typename> class Predicate, std::size_t N>
+    struct find_if<Tpl<>, Predicate, N>: identity_value<N>{};
+    template <typename Tpl, template <typename> class Predicate>
+    constexpr std::size_t find_if_v = find_if<Tpl, Predicate>::value;
 
     namespace detail {
         template <typename Tpl1, typename Tpl2, bool is_empty = size_v<Tpl1> == 0>

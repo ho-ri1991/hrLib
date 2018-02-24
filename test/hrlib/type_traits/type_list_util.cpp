@@ -5,6 +5,11 @@
 template <typename... Args>
 struct TypeList {};
 
+template <typename T>
+struct Predicate1{
+    static constexpr bool value = std::is_same_v<T, int>;
+};
+
 using namespace hrlib::type_traits;
 
 int main(){
@@ -46,6 +51,10 @@ int main(){
     static_assert(std::is_same_v<reverse_t<TypeList<int>>, TypeList<int>>);
     static_assert(std::is_same_v<reverse_t<TypeList<>>, TypeList<>>);
 
+    static_assert(std::is_same_v<last_t<TypeList<int, bool, double>>, double>);
+    static_assert(std::is_same_v<last_t<TypeList<int>>, int>);
+    last<TypeList<>> l;
+
     static_assert(std::is_same_v<get_t<TypeList<int, bool, double>, 0>, int>);
     static_assert(std::is_same_v<get_t<TypeList<int, bool, double>, 1>, bool>);
     static_assert(std::is_same_v<get_t<TypeList<int, bool, double>, 2>, double>);
@@ -54,6 +63,11 @@ int main(){
     static_assert(find_v<TypeList<int, bool, int, double>, bool> == 1);
     static_assert(find_v<TypeList<int, bool, int, double>, double> == 3);
     static_assert(find_v<TypeList<int, bool, int, double>, float> == 4);
+
+    static_assert(find_if_v<TypeList<int, bool, int, double>, Predicate1> == 0);
+    static_assert(find_if_v<TypeList<bool, int, double>, Predicate1> == 1);
+    static_assert(find_if_v<TypeList<bool, bool, int, double>, Predicate1> == 2);
+    static_assert(find_if_v<TypeList<bool, double>, Predicate1> == 2);
 
     static_assert(is_permutation_v<TypeList<int, bool, double>, TypeList<bool, int, double>>);
     static_assert(is_permutation_v<TypeList<int, bool, double, int>, TypeList<int, bool, int, double>>);
