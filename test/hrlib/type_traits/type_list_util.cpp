@@ -73,6 +73,12 @@ int main(){
     static_assert(is_permutation_v<TypeList<int, bool, double, int>, TypeList<int, bool, int, double>>);
     static_assert(!is_permutation_v<TypeList<int, int, double>, TypeList<bool, int, double>>);
 
+    static_assert(std::is_same_v<unique_t<TypeList<int, int, int>>, TypeList<int>>);
+    static_assert(std::is_same_v<unique_t<TypeList<int, bool, double, int>>, TypeList<int, bool, double>>);
+    static_assert(std::is_same_v<unique_t<TypeList<int, bool, double>>, TypeList<int, bool, double>>);
+    static_assert(std::is_same_v<unique_t<TypeList<int, bool, double, bool, int, float>>, TypeList<int, bool, double, float>>);
+    static_assert(std::is_same_v<unique_t<TypeList<>>, TypeList<>>);
+
     return 0;
 }
 

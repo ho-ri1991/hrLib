@@ -167,6 +167,45 @@ namespace hrlib::type_traits {
     struct is_permutation: std::conditional_t<size_v<Tpl1> != size_v<Tpl2>, identity<std::false_type>, detail::is_permutation_impl<Tpl1, Tpl2>>::type{};
     template <typename Tpl1, typename Tpl2>
     constexpr bool is_permutation_v = is_permutation<Tpl1, Tpl2>::value;
+
+    namespace detail {
+        template <typename Tpl, typename T>
+        struct unique_impl_helper {
+        private:
+            static constexpr auto n = find_v<Tpl, T>;
+        public:
+            using type = 
+                typename std::conditional_t<
+                    n == size_v<Tpl>,
+                    identity<Tpl>,
+                    unique_impl_helper<delete_nth_t<Tpl, n>, T>
+                >::type;
+        };
+        template <typename Tpl, bool isEmpty = empty_v<Tpl>>
+        struct unique_impl {
+        private:
+            using deduplicated = 
+                push_front_t<
+                    typename unique_impl_helper<tail_t<Tpl>, head_t<Tpl>>::type,
+                    head_t<Tpl>
+                >;
+        public:
+            using type = 
+                push_front_t<
+                    typename unique_impl<tail_t<deduplicated>>::type,
+                    head_t<deduplicated>
+                >;
+        };
+        template <typename Tpl>
+        struct unique_impl<Tpl, true> {
+            using type = Tpl;
+        };
+    }
+
+    template <typename Tpl>
+    struct unique: detail::unique_impl<Tpl>{};
+    template <typename Tpl>
+    using unique_t = typename unique<Tpl>::type;
 }
 
 #endif //HRLIB_TYPE_TRAITS_TYPE_LIST_UTIL
