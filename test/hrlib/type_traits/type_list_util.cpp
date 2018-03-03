@@ -79,6 +79,12 @@ int main(){
     static_assert(std::is_same_v<unique_t<TypeList<int, bool, double, bool, int, float>>, TypeList<int, bool, double, float>>);
     static_assert(std::is_same_v<unique_t<TypeList<>>, TypeList<>>);
 
+    static_assert(std::is_same_v<split_t<TypeList<int, bool, double, int>, 0>, TypeList<TypeList<>,TypeList<int, bool, double, int>>>);
+    static_assert(std::is_same_v<split_t<TypeList<int, bool, double, int>, 1>, TypeList<TypeList<int>,TypeList<bool, double, int>>>);
+    static_assert(std::is_same_v<split_t<TypeList<int, bool, double, int>, 2>, TypeList<TypeList<int, bool>,TypeList<double, int>>>);
+    static_assert(std::is_same_v<split_t<TypeList<int, bool, double, int>, 3>, TypeList<TypeList<int, bool, double>,TypeList<int>>>);
+    static_assert(std::is_same_v<split_t<TypeList<int, bool, double, int>, 4>, TypeList<TypeList<int, bool, double, int>,TypeList<>>>);
+
     return 0;
 }
 

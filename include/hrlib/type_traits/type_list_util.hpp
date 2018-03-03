@@ -206,6 +206,24 @@ namespace hrlib::type_traits {
     struct unique: detail::unique_impl<Tpl>{};
     template <typename Tpl>
     using unique_t = typename unique<Tpl>::type;
+
+    template <typename Tpl, std::size_t N>
+    struct split;
+    template <template <typename...> class Tpl, typename... Ts, std::size_t N>
+    struct split<Tpl<Ts...>, N> {
+        static_assert(N <= size_v<Tpl<Ts...>>);
+    private:
+        using target = Tpl<Ts...>;
+        using T = typename split<tail_t<target>, N - 1>::type;
+    public:
+        using type = Tpl<push_front_t<head_t<T>, head_t<target>>, last_t<T>>;
+    };
+    template <template <typename...> class Tpl, typename... Ts>
+    struct split<Tpl<Ts...>, 0> {
+        using type = Tpl<Tpl<>, Tpl<Ts...>>;
+    };
+    template <typename Tpl, std::size_t N>
+    using split_t = typename split<Tpl, N>::type;
 }
 
 #endif //HRLIB_TYPE_TRAITS_TYPE_LIST_UTIL
