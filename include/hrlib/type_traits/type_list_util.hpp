@@ -224,6 +224,14 @@ namespace hrlib::type_traits {
     };
     template <typename Tpl, std::size_t N>
     using split_t = typename split<Tpl, N>::type;
+
+    template <typename Tpl, std::size_t Begin, std::size_t End>
+    struct slice {
+        static_assert(Begin <= End);
+        using type = head_t<split_t<last_t<split_t<Tpl, Begin>>, End - Begin>>;
+    };
+    template <typename Tpl, std::size_t Begin, std::size_t End>
+    using slice_t = typename slice<Tpl, Begin, End>::type;
 }
 
 #endif //HRLIB_TYPE_TRAITS_TYPE_LIST_UTIL

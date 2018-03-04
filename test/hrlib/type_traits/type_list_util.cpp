@@ -85,6 +85,22 @@ int main(){
     static_assert(std::is_same_v<split_t<TypeList<int, bool, double, int>, 3>, TypeList<TypeList<int, bool, double>,TypeList<int>>>);
     static_assert(std::is_same_v<split_t<TypeList<int, bool, double, int>, 4>, TypeList<TypeList<int, bool, double, int>,TypeList<>>>);
 
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 0, 4>, TypeList<int, bool, double, float>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 0, 3>, TypeList<int, bool, double>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 0, 2>, TypeList<int, bool>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 0, 1>, TypeList<int>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 0, 0>, TypeList<>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 1, 4>, TypeList<bool, double, float>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 1, 3>, TypeList<bool, double>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 1, 2>, TypeList<bool>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 1, 1>, TypeList<>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 2, 4>, TypeList<double, float>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 2, 3>, TypeList<double>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 2, 2>, TypeList<>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 3, 4>, TypeList<float>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 3, 3>, TypeList<>>);
+    static_assert(std::is_same_v<slice_t<TypeList<int, bool, double, float>, 4, 4>, TypeList<>>);
+
     return 0;
 }
 
