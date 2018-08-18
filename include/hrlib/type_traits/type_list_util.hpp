@@ -41,14 +41,18 @@ namespace hrlib::type_traits {
     template <typename Tpl>
     constexpr bool empty_v = empty<Tpl>::value;
 
-    template <typename, typename>
-    struct concat;
-    template <template <typename...> class Tpl, typename... Ts1, typename... Ts2>
-    struct concat<Tpl<Ts1...>, Tpl<Ts2...>> {
-        using type = Tpl<Ts1..., Ts2...>;
+    template <typename Tpl, typename... Tpls>
+    struct concat
+    {
+      using type = typename concat<Tpl, typename concat<Tpls...>::type>::type;
     };
-    template <typename Tpl1, typename Tpl2>
-    using concat_t = typename concat<Tpl1, Tpl2>::type;
+    template <template <typename...> class Tpl, typename... Ts1, typename... Ts2>
+    struct concat<Tpl<Ts1...>, Tpl<Ts2...>>
+    {
+      using type = Tpl<Ts1..., Ts2...>;
+    };
+    template <typename... Tpls>
+    using concat_t = typename concat<Tpls...>::type;
 
     template <typename, typename>
     struct push_front;
@@ -227,7 +231,7 @@ namespace hrlib::type_traits {
 
     template <typename Tpl, std::size_t Begin, std::size_t End>
     struct slice {
-        static_assert(Begin <= End);
+        static_assert(Begin <= End && End <= size_v<Tpl>);
         using type = head_t<split_t<last_t<split_t<Tpl, Begin>>, End - Begin>>;
     };
     template <typename Tpl, std::size_t Begin, std::size_t End>
