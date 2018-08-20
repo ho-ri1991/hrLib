@@ -40,9 +40,9 @@ namespace hrlib::static_graph
     struct single_node_constraints_impl<
       Node,
       std::void_t<
-        std::enable_if_t<std::is_same_v<std::decay_t<Node>::node_type_tag, single_node_tag>>,
-        decltype(std::decay_t<Node>::make_chained(std::declval<std::tuple<std::decay_t<Node>>>())),
-        decltype(std::decay_t<Node>::make_or(std::declval<std::tuple<std::decay_t<Node>>>())),
+        std::enable_if_t<std::is_same_v<typename std::decay_t<Node>::node_type_tag, single_node_tag>>,
+        decltype(std::decay_t<Node>::make_chained(std::declval<std::tuple<std::decay_t<Node>, std::decay_t<Node>>>())),
+        decltype(std::decay_t<Node>::make_or(std::declval<std::tuple<std::decay_t<Node>, std::decay_t<Node>>>())),
         decltype(std::declval<Node>().template copy<terminal_node>()),
         decltype(std::declval<Node>().next),
         decltype(std::declval<Node>().construct_connection())
@@ -71,8 +71,6 @@ namespace hrlib::static_graph
       Node,
       std::void_t<
         std::enable_if_t<std::is_same_v<typename std::decay_t<Node>::node_type_tag, or_node_tag>>,
-        typename std::decay_t<Node>::head_type,
-        typename std::decay_t<Node>::last_type,
         decltype(std::declval<Node>().template copy<terminal_node>()),
         decltype(std::declval<Node>().get_nodes()),
         decltype(std::declval<Node>().construct_connection())
@@ -182,9 +180,15 @@ namespace hrlib::static_graph
   template <typename Node>
   struct single_node_constraints: detail::single_node_constraints_impl<Node> {};
   template <typename Node>
+  constexpr bool single_node_constraints_v = single_node_constraints<Node>::value;
+  template <typename Node>
   struct chained_node_constraints: detail::chained_node_constraints_impl<Node> {};
   template <typename Node>
+  constexpr bool chained_node_constraints_v = chained_node_constraints<Node>::value;
+  template <typename Node>
   struct or_node_constraints: detail::or_node_constraints_impl<Node> {};
+  template <typename Node>
+  constexpr bool or_node_constraints_v = or_node_constraints<Node>::value;
 
   template <typename, typename, typename...>
   struct chained_node;
@@ -383,9 +387,9 @@ namespace hrlib::static_graph
   struct is_combinable_node:
     std::bool_constant<
       std::disjunction_v<
-        is_combinable_single_node<Node>,
-        type_traits::is_match_template<chained_node, Node>,
-        type_traits::is_match_template<or_node, Node>
+        single_node_constraints<Node>,
+        chained_node_constraints<Node>,
+        or_node_constraints<Node>
       >
     > {};
   template <typename Node>
@@ -404,31 +408,32 @@ namespace hrlib::static_graph
     using Node2 = std::decay_t<N2>;
     using Node2Heads = type_list_meta::to_tuple_t<node_heads_t<Node2>>;
     using Node1NewNextNodes = std::conditional_t<std::tuple_size_v<Node2Heads> == 1, std::tuple_element_t<0, Node2Heads>, Node2Heads>;
+    using ContentNodeType = std::tuple_element_t<0, Node2Heads>; // this type is used for calling static function make_chained
     auto head_nodes = n1.template copy<Node1NewNextNodes>();
     if constexpr (
-      type_traits::is_match_template_v<chained_node, Node1> &&
-      type_traits::is_match_template_v<chained_node, Node2>
+      std::is_same_v<typename Node1::node_type_tag, chained_node_tag> &&
+      std::is_same_v<typename Node2::node_type_tag, chained_node_tag>
     )
     { // both nodes are chained node
-      return chained_node(std::tuple_cat(std::move(head_nodes).get_nodes(), std::forward<N2>(n2).get_nodes()));
+      return ContentNodeType::make_chained(std::tuple_cat(std::move(head_nodes).get_nodes(), std::forward<N2>(n2).get_nodes()));
     }
     else if constexpr (
-      type_traits::is_match_template_v<chained_node, Node1> &&
-      !type_traits::is_match_template_v<chained_node, Node2>
+      std::is_same_v<typename Node1::node_type_tag, chained_node_tag> &&
+      !std::is_same_v<typename Node2::node_type_tag, chained_node_tag>
     )
     {
-      return chained_node(std::tuple_cat(std::move(head_nodes).get_nodes(), std::make_tuple(std::forward<N2>(n2))));
+      return ContentNodeType::make_chained(std::tuple_cat(std::move(head_nodes).get_nodes(), std::make_tuple(std::forward<N2>(n2))));
     }
     else if constexpr (
-      !type_traits::is_match_template_v<chained_node, Node1> &&
-      type_traits::is_match_template_v<chained_node, Node2>
+      !std::is_same_v<typename Node1::node_type_tag, chained_node_tag> &&
+      std::is_same_v<typename Node2::node_type_tag, chained_node_tag>
     )
     {
-      return chained_node(std::tuple_cat(std::make_tuple(std::move(head_nodes)), std::forward<N2>(n2).get_nodes()));
+      return ContentNodeType::make_chained(std::tuple_cat(std::make_tuple(std::move(head_nodes)), std::forward<N2>(n2).get_nodes()));
     }
     else
     {
-      return chained_node(std::make_tuple(std::move(head_nodes), std::forward<N2>(n2)));
+      return ContentNodeType::make_chained(std::make_tuple(std::move(head_nodes), std::forward<N2>(n2)));
     }
   }
   template <
@@ -442,30 +447,32 @@ namespace hrlib::static_graph
   {
     using Node1 = std::decay_t<N1>;
     using Node2 = std::decay_t<N2>;
+    using Node2Heads = type_list_meta::to_tuple_t<node_heads_t<Node2>>;
+    using ContentNodeType = std::tuple_element_t<0, Node2Heads>; // this type is used for calling static function make_or
     if constexpr (
-      type_traits::is_match_template_v<or_node, Node1> &&
-      type_traits::is_match_template_v<or_node, Node2>
+      std::is_same_v<typename Node1::node_type_tag, or_node_tag> &&
+      std::is_same_v<typename Node2::node_type_tag, or_node_tag>
     )
     {
-      return or_node(std::tuple_cat(std::forward<N1>(n1).get_nodes(), std::forward<N2>(n2).get_nodes()));
+      return ContentNodeType::make_or(std::tuple_cat(std::forward<N1>(n1).get_nodes(), std::forward<N2>(n2).get_nodes()));
     }
     else if constexpr (
-      type_traits::is_match_template_v<or_node, Node1> &&
-      !type_traits::is_match_template_v<or_node, Node2>
+      std::is_same_v<typename Node1::node_type_tag, or_node_tag> &&
+      !std::is_same_v<typename Node2::node_type_tag, or_node_tag>
     )
     {
-      return or_node(std::tuple_cat(std::forward<N1>(n1).get_nodes(), std::tuple(std::forward<N2>(n2))));
+      return ContentNodeType::make_or(std::tuple_cat(std::forward<N1>(n1).get_nodes(), std::tuple(std::forward<N2>(n2))));
     }
     else if constexpr (
-      !type_traits::is_match_template_v<or_node, Node1> &&
-      type_traits::is_match_template_v<or_node, Node2>
+      !std::is_same_v<typename Node1::node_type_tag, or_node_tag> &&
+      std::is_same_v<typename Node2::node_type_tag, or_node_tag>
     )
     {
-      return or_node(std::tuple_cat(std::tuple(std::forward<N1>(n1)), std::forward<N2>(n2).get_nodes()));
+      return ContentNodeType::make_or(std::tuple_cat(std::tuple(std::forward<N1>(n1)), std::forward<N2>(n2).get_nodes()));
     }
     else
     {
-      return or_node(std::tuple(std::forward<N1>(n1), std::forward<N2>(n2)));
+      return ContentNodeType::make_or(std::tuple(std::forward<N1>(n1), std::forward<N2>(n2)));
     }
   }
 }
